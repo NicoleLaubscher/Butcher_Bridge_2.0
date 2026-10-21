@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: butcherbridge
+      MYSQL_USER: butcherbridge
+      MYSQL_PASSWORD: butcherbridge-dev
+      MYSQL_ROOT_PASSWORD: root-dev-only
+    ports:
+      - "3306:3306"
+    volumes:
+      - butcherbridge_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot-dev-only"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  butcherbridge_mysql:
+
