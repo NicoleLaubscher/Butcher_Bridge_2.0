@@ -10,6 +10,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, session
 
+load_dotenv()
+
 from config import CONFIGS
 from .extensions import db, login_manager, migrate
 from .errors import register_error_handlers
