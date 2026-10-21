@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Decision workspace | ButcherBridge{% endblock %}
+{% block content %}
+<section class="workspace-hero section-wrap">
+  <div>
+    <span class="eyebrow">Procurement planning workspace</span>
+    <h1>Test the decision. Don’t assume aggregation wins.</h1>
+    <p>Quantify demand, screen supplier constraints, allocate capacity and compare recorded baseline, individual procurement and coordinated fulfilment on total landed cost and service.</p>
+  </div>
+  <div class="scenario-control card">
+    <label for="scenarioSelect">Evaluation scenario</label>
+    <select id="scenarioSelect">
+      {% for scenario in scenarios %}<option value="{{ scenario.id }}">{{ scenario.name }}</option>{% endfor %}
+    </select>
+    <button id="runEvaluation" class="primary-btn">Run validated comparison</button>
+  </div>
+</section>
+
+<section class="process-band" aria-label="Decision process">
+  <div><b>01</b><span>Capture baseline & demand</span></div>
+  <div><b>02</b><span>Test supplier feasibility</span></div>
+  <div><b>03</b><span>Compare total cost & service</span></div>
+</section>
+
+<section class="section-wrap dashboard-grid">
+  <article class="decision-card card" id="decisionCard" aria-live="polite">
+    <div class="decision-copy">
+      <span class="card-kicker">Defensible recommendation</span>
+      <div class="decision-title-row"><h2 id="decisionTitle">Ready to evaluate</h2><span id="decisionBadge" class="status neutral">Waiting</span></div>
+      <p id="decisionRationale" class="muted">Select a scenario and run the comparison.</p>
+      <div class="scenario-meta" id="scenarioMeta"></div>
+    </div>
+    <div class="decision-cost">
+      <small>Recommended landed cost</small>
+      <strong id="recommendedCost">—</strong>
+      <span id="recommendedType">No result yet</span>
+    </div>
+  </article>
+
+  <div class="kpi-grid" id="kpiGrid">
+    <article class="kpi-card card"><span>Committed demand</span><strong id="kpiDemand">—</strong><small id="kpiRetailers">—</small></article>
+    <article class="kpi-card card"><span>Landed cost / kg</span><strong id="kpiCost">—</strong><small id="kpiSaving">—</small></article>
+    <article class="kpi-card card"><span>Logistics cost / kg</span><strong id="kpiLogistics">—</strong><small>Includes fixed + variable fulfilment</small></article>
+    <article class="kpi-card card"><span>Trips avoided</span><strong id="kpiTrips">—</strong><small id="kpiDistance">—</small></article>
+    <article class="kpi-card card"><span>Expected fill rate</span><strong id="kpiFill">—</strong><small id="baselineFill">—</small></article>
+    <article class="kpi-card card"><span>Expected on-time</span><strong id="kpiOnTime">—</strong><small id="baselineOnTime">—</small></article>
+  </div>
+
+  <div class="analysis-grid">
+    <article class="card panel">
+      <div class="panel-heading"><div><span class="card-kicker">Baseline comparison</span><h2>Total procurement cost per kilogram</h2></div><span class="legend-note">Lower is better</span></div>
+      <div id="costBars" class="cost-bars empty-state">Run the evaluation to compare alternatives.</div>
+    </article>
+    <article class="card panel">
+      <div class="panel-heading"><div><span class="card-kicker">Cost–responsiveness trade-off</span><h2>Landed cost versus lead time</h2></div><span class="legend-note">● recommended</span></div>
+      <div id="tradeoffChart" class="tradeoff-chart empty-state">No evaluated options yet.</div>
+    </article>
+  </div>
+
+  <article class="card panel">
+    <div class="panel-heading"><div><span class="card-kicker">Constraint screening</span><h2>Supplier feasibility</h2></div><span id="feasibleCount" class="status neutral">—</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Product</th><th>Capacity</th><th>Areas</th><th>Lead time</th><th>Result</th></tr></thead><tbody id="feasibilityRows"><tr><td colspan="6" class="empty-cell">No scenario loaded.</td></tr></tbody></table></div>
+  </article>
+
+  <article class="card panel">
+    <div class="panel-heading"><div><span class="card-kicker">Alternative ranking</span><h2>Individual versus collective purchasing</h2></div><span class="legend-note">All values include fulfilment</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Option</th><th>Suppliers</th><th>Total cost</th><th>Landed / kg</th><th>Logistics / kg</th><th>Lead</th><th>Fill rate</th><th>Baseline Δ</th></tr></thead><tbody id="optionRows"><tr><td colspan="8" class="empty-cell">No evaluated alternatives.</td></tr></tbody></table></div>
+  </article>
+
+  <article class="card panel rules-panel">
+    <div><span class="card-kicker">Transparent logic</span><h2>Rules used in this run</h2></div>
+    <ol id="rulesList"><li>Run an evaluation to display the decision rules.</li></ol>
+  </article>
+</section>
+
+<section class="data-section">
+  <div class="section-wrap">
+    <div class="section-heading"><div><span class="eyebrow">Primary-data workspace</span><h2>Inputs behind the recommendation</h2><p>Replace the seeded demonstration values with verified retailer, supplier and fulfilment data before the final evaluation.</p></div><span class="status warning">Primary data required</span></div>
+
+    <article class="card panel">
+      <div class="panel-heading"><div><span class="card-kicker">Retailer inputs</span><h2>Demand and current baseline</h2></div><button class="secondary-btn" data-toggle="demandForm">+ Add retailer demand</button></div>
+      <form id="demandForm" class="editor-form hidden" novalidate>
+        <div class="form-grid">
+          <label>Retailer name<input name="retailer_name" required></label><label>Area<input name="area" required></label>
+          <label>Demand (kg)<input name="quantity_kg" type="number" min="0.01" step="0.01" required></label><label>Required date<input name="required_date" type="date" required></label>
+          <label>Current product price / kg<input name="baseline_price_per_kg" type="number" min="0" step="0.01" required></label><label>Current logistics cost / order<input name="baseline_logistics_cost" type="number" min="0" step="0.01" required></label>
+          <label>Current handling cost / order<input name="baseline_handling_cost" type="number" min="0" step="0.01" value="0" required></label><label>Procurement admin/trip cost<input name="individual_procurement_cost" type="number" min="0" step="0.01" value="0" required></label>
+          <label>Round-trip distance (km)<input name="baseline_distance_km" type="number" min="0" step="0.1" required></label><label>Trips per order<input name="baseline_trips" type="number" min="0" step="1" value="1" required></label>
+          <label>Orders per month<input name="orders_per_month" type="number" min="0" step="0.1" value="4" required></label><label>Current fill rate (%)<input name="baseline_fill_rate_pct" type="number" min="0" max="100" value="95" required></label>
+          <label>Current on-time rate (%)<input name="baseline_on_time_rate_pct" type="number" min="0" max="100" value="92" required></label>
+        </div><div class="form-actions"><button class="primary-btn" type="submit">Save committed demand</button><button class="ghost-btn" type="button" data-toggle="demandForm">Cancel</button></div>
+      </form>
+      <div class="table-wrap"><table><thead><tr><th>Retailer</th><th>Area</th><th>Demand</th><th>Required</th><th>Status</th><th>Baseline cost/kg</th><th>Logistics</th><th>Trips / distance</th><th>Action</th></tr></thead><tbody id="demandRows"></tbody></table></div>
+    </article>
+
+    <article class="card panel">
+      <div class="panel-heading"><div><span class="card-kicker">Supplier inputs</span><h2>Quotations and constraints</h2></div><button class="secondary-btn" data-toggle="quoteForm">+ Add supplier quote</button></div>
+      <form id="quoteForm" class="editor-form hidden" novalidate>
+        <div class="form-grid">
+          <label>Supplier name<input name="supplier_name" required></label><label>Service areas<input name="service_areas" placeholder="Mamelodi, Soshanguve or All" required></label>
+          <label>Capacity (kg)<input name="capacity_kg" type="number" min="0.01" step="0.01" required></label><label>Lead time (days)<input name="lead_time_days" type="number" min="0" step="1" required></label>
+          <label>Fixed fulfilment cost<input name="fixed_fulfilment_cost" type="number" min="0" step="0.01" required></label><label>Variable fulfilment / kg<input name="variable_fulfilment_per_kg" type="number" min="0" step="0.01" required></label>
+          <label>Handling cost<input name="handling_cost" type="number" min="0" step="0.01" value="0" required></label><label>Route distance (km)<input name="route_distance_km" type="number" min="0" step="0.1" required></label>
+          <label>Price tiers<input name="price_tiers" placeholder="0:78; 150:74; 280:70" required></label><label>Expected fill rate (%)<input name="expected_fill_rate_pct" type="number" min="0" max="100" value="98" required></label>
+          <label>Expected on-time rate (%)<input name="expected_on_time_rate_pct" type="number" min="0" max="100" value="97" required></label>
+        </div><div class="form-actions"><button class="primary-btn" type="submit">Save quotation</button><button class="ghost-btn" type="button" data-toggle="quoteForm">Cancel</button></div>
+      </form>
+      <div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Capacity</th><th>Lead</th><th>Service areas</th><th>Fulfilment</th><th>Price tiers</th><th>Service forecast</th></tr></thead><tbody id="quoteRows"></tbody></table></div>
+    </article>
+
+    <article class="card panel">
+      <div class="panel-heading"><div><span class="card-kicker">Post-order measurement</span><h2>Record actual fulfilment performance</h2><p>Actual data closes the loop between predicted and realised results.</p></div></div>
+      <form id="performanceForm" class="editor-form always-open" novalidate>
+        <div class="form-grid">
+          <label>Supplier name<input name="supplier_name" required></label><label>Ordered quantity (kg)<input name="ordered_quantity_kg" type="number" min="0.01" step="0.01" required></label>
+          <label>Delivered quantity (kg)<input name="delivered_quantity_kg" type="number" min="0" step="0.01" required></label><label>Actual total cost<input name="actual_total_cost" type="number" min="0" step="0.01" required></label>
+          <label>Due date<input name="due_date" type="date" required></label><label>Delivered date<input name="delivered_date" type="date" required></label>
+          <label>Actual logistics cost<input name="actual_logistics_cost" type="number" min="0" step="0.01" required></label><label>Actual trips<input name="actual_trips" type="number" min="0" step="1" required></label>
+          <label>Actual distance (km)<input name="actual_distance_km" type="number" min="0" step="0.1" required></label><label>Exception notes<input name="exception_notes" placeholder="Delay, shortage or quality exception"></label>
+        </div><button class="primary-btn" type="submit">Save actual outcome</button>
+      </form>
+      <div id="performanceSummary" class="performance-summary empty-state">No completed-order data recorded for this scenario.</div>
+    </article>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>{% endblock %}
+

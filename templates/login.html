@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Sign in | ButcherBridge{% endblock %}
+{% block content %}
+<section class="login-page">
+  <div class="login-copy">
+    <span class="eyebrow">Private decision workspace</span>
+    <h1>Better procurement decisions begin with the full landed cost.</h1>
+    <p>Combine committed retailer demand with supplier tiers, capacity, lead time, service area and fulfilment cost—then accept aggregation only when the evidence supports it.</p>
+    <div class="rule-chips"><span>Cost/kg</span><span>Capacity</span><span>Lead time</span><span>Service</span></div>
+  </div>
+  <div class="login-card card">
+    <div class="card-kicker">Secure access</div>
+    <h2>Sign in to ButcherBridge</h2>
+    <p class="muted">Use the seeded administrator account for the complete demonstration.</p>
+    <form method="post" class="stack-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Email address<input type="email" name="email" value="admin@butcherbridge.local" autocomplete="username" required></label>
+      <label>Password<input type="password" name="password" value="butcherbridge" autocomplete="current-password" required></label>
+      <label class="check-row"><input type="checkbox" name="remember"> Keep me signed in on this computer</label>
+      <button class="primary-btn full" type="submit">Open decision workspace</button>
+    </form>
+    <div class="demo-note"><b>Demo login</b><code>admin@butcherbridge.local</code><code>butcherbridge</code></div>
+  </div>
+</section>
+{% endblock %}
+

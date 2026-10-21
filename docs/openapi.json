@@ -1,0 +1,56 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ButcherBridge API",
+    "version": "1.0.0",
+    "description": "Authenticated REST API for retailer demand, supplier quotations, procurement evaluation and actual fulfilment performance."
+  },
+  "servers": [{"url": "http://127.0.0.1:5000"}],
+  "paths": {
+    "/api/scenarios": {
+      "get": {"summary": "List scenarios", "responses": {"200": {"description": "Scenario list"}}},
+      "post": {"summary": "Create scenario (admin)", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ScenarioInput"}}}}, "responses": {"201": {"description": "Created"}, "400": {"$ref": "#/components/responses/ValidationError"}}}
+    },
+    "/api/scenarios/{scenarioId}": {
+      "get": {"summary": "Get scenario, demands and quotations", "parameters": [{"$ref": "#/components/parameters/ScenarioId"}], "responses": {"200": {"description": "Scenario inputs"}, "404": {"description": "Not found"}}}
+    },
+    "/api/scenarios/{scenarioId}/evaluate": {
+      "post": {"summary": "Evaluate and save procurement alternatives", "parameters": [{"$ref": "#/components/parameters/ScenarioId"}], "responses": {"200": {"description": "Decision result", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EvaluationResult"}}}}, "422": {"description": "Scenario cannot be evaluated"}}}
+    },
+    "/api/demands": {
+      "get": {"summary": "List and filter retailer demands", "parameters": [{"$ref": "#/components/parameters/Page"}, {"$ref": "#/components/parameters/PerPage"}, {"name": "scenario_id", "in": "query", "schema": {"type": "integer"}}, {"name": "status", "in": "query", "schema": {"type": "string"}}], "responses": {"200": {"description": "Paginated demands"}}},
+      "post": {"summary": "Create retailer demand", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DemandInput"}}}}, "responses": {"201": {"description": "Created"}, "400": {"$ref": "#/components/responses/ValidationError"}}}
+    },
+    "/api/demands/{demandId}/status": {
+      "patch": {"summary": "Commit or withdraw demand", "parameters": [{"name": "demandId", "in": "path", "required": true, "schema": {"type": "integer"}}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["status"], "properties": {"status": {"type": "string", "enum": ["pending", "committed", "withdrawn"]}}}}}}, "responses": {"200": {"description": "Updated"}, "409": {"description": "Withdrawal locked after deadline"}}}
+    },
+    "/api/quotes": {
+      "get": {"summary": "List and filter supplier quotations", "parameters": [{"$ref": "#/components/parameters/Page"}, {"$ref": "#/components/parameters/PerPage"}], "responses": {"200": {"description": "Paginated quotations"}}},
+      "post": {"summary": "Create supplier quotation", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/QuoteInput"}}}}, "responses": {"201": {"description": "Created"}, "400": {"$ref": "#/components/responses/ValidationError"}, "403": {"description": "Role not allowed"}}}
+    },
+    "/api/performance": {
+      "post": {"summary": "Record actual completed-order performance", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PerformanceInput"}}}}, "responses": {"201": {"description": "Recorded actual KPIs"}}}
+    },
+    "/api/scenarios/{scenarioId}/performance": {
+      "get": {"summary": "Summarise actual scenario KPIs", "parameters": [{"$ref": "#/components/parameters/ScenarioId"}], "responses": {"200": {"description": "Actual KPI summary"}}}
+    }
+  },
+  "components": {
+    "parameters": {
+      "ScenarioId": {"name": "scenarioId", "in": "path", "required": true, "schema": {"type": "integer"}},
+      "Page": {"name": "page", "in": "query", "schema": {"type": "integer", "minimum": 1, "default": 1}},
+      "PerPage": {"name": "per_page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}
+    },
+    "responses": {
+      "ValidationError": {"description": "Invalid request", "content": {"application/json": {"schema": {"type": "object", "properties": {"error": {"type": "string"}, "details": {"type": "object"}}}}}}
+    },
+    "schemas": {
+      "ScenarioInput": {"type": "object", "required": ["name", "code", "description", "expected_outcome", "product", "window_open", "window_close", "commitment_deadline", "compatibility_days", "minimum_fill_rate", "minimum_on_time_rate"], "properties": {"name": {"type": "string"}, "code": {"type": "string"}, "description": {"type": "string"}, "expected_outcome": {"type": "string"}, "product": {"type": "string"}, "window_open": {"type": "string", "format": "date"}, "window_close": {"type": "string", "format": "date"}, "commitment_deadline": {"type": "string", "format": "date"}, "compatibility_days": {"type": "integer", "minimum": 0}, "minimum_fill_rate": {"type": "number", "minimum": 0, "maximum": 1}, "minimum_on_time_rate": {"type": "number", "minimum": 0, "maximum": 1}}},
+      "DemandInput": {"type": "object", "required": ["scenario_id", "retailer_name", "area", "product", "quantity_kg", "required_date", "baseline_price_per_kg", "baseline_logistics_cost", "baseline_handling_cost", "baseline_distance_km", "baseline_trips", "baseline_fill_rate", "baseline_on_time_rate", "orders_per_month", "individual_procurement_cost"], "properties": {"scenario_id": {"type": "integer"}, "retailer_name": {"type": "string"}, "area": {"type": "string"}, "product": {"type": "string"}, "quantity_kg": {"type": "number", "exclusiveMinimum": 0}, "required_date": {"type": "string", "format": "date"}, "status": {"type": "string", "enum": ["pending", "committed", "withdrawn"]}, "baseline_price_per_kg": {"type": "number"}, "baseline_logistics_cost": {"type": "number"}, "baseline_handling_cost": {"type": "number"}, "baseline_distance_km": {"type": "number"}, "baseline_trips": {"type": "number"}, "baseline_fill_rate": {"type": "number"}, "baseline_on_time_rate": {"type": "number"}, "orders_per_month": {"type": "number"}, "individual_procurement_cost": {"type": "number"}}},
+      "QuoteInput": {"type": "object", "required": ["scenario_id", "supplier_name", "product", "capacity_kg", "lead_time_days", "service_areas", "price_tiers", "fixed_fulfilment_cost", "variable_fulfilment_per_kg", "handling_cost", "route_distance_km", "expected_fill_rate", "expected_on_time_rate"], "properties": {"scenario_id": {"type": "integer"}, "supplier_name": {"type": "string"}, "product": {"type": "string"}, "capacity_kg": {"type": "number"}, "lead_time_days": {"type": "integer"}, "service_areas": {"type": "array", "items": {"type": "string"}}, "price_tiers": {"type": "array", "items": {"type": "object", "required": ["minimum_kg", "price_per_kg"], "properties": {"minimum_kg": {"type": "number"}, "price_per_kg": {"type": "number"}}}}, "fixed_fulfilment_cost": {"type": "number"}, "variable_fulfilment_per_kg": {"type": "number"}, "handling_cost": {"type": "number"}, "route_distance_km": {"type": "number"}, "expected_fill_rate": {"type": "number"}, "expected_on_time_rate": {"type": "number"}}},
+      "PerformanceInput": {"type": "object", "required": ["scenario_id", "supplier_name", "ordered_quantity_kg", "delivered_quantity_kg", "actual_total_cost", "due_date", "delivered_date", "actual_logistics_cost", "actual_trips", "actual_distance_km"], "properties": {"scenario_id": {"type": "integer"}, "supplier_name": {"type": "string"}, "ordered_quantity_kg": {"type": "number"}, "delivered_quantity_kg": {"type": "number"}, "actual_total_cost": {"type": "number"}, "due_date": {"type": "string", "format": "date"}, "delivered_date": {"type": "string", "format": "date"}, "actual_logistics_cost": {"type": "number"}, "actual_trips": {"type": "integer"}, "actual_distance_km": {"type": "number"}, "exception_notes": {"type": "string"}}},
+      "EvaluationResult": {"type": "object", "properties": {"decision": {"type": "string", "enum": ["ACCEPT_AGGREGATION", "ACCEPT_COORDINATED_SPLIT", "REJECT_AGGREGATION", "NO_FEASIBLE_OPTION"]}, "rationale": {"type": "string"}, "rules_applied": {"type": "array", "items": {"type": "string"}}, "compatible_demand": {"type": "object"}, "baseline": {"type": "object"}, "supplier_feasibility": {"type": "array", "items": {"type": "object"}}, "collective_options": {"type": "array", "items": {"type": "object"}}, "coordinated_split_option": {"type": "object", "nullable": true}, "individual_option": {"type": "object", "nullable": true}, "recommendation": {"type": "object", "nullable": true}, "recommended_kpis": {"type": "object", "nullable": true}, "cost_responsiveness_tradeoff": {"type": "array", "items": {"type": "object"}}}}
+    }
+  }
+}
+

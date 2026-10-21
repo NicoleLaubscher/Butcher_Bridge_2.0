@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="description" content="ButcherBridge supply-chain procurement decision support">
+  <title>{% block title %}ButcherBridge{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('auth.login') }}" aria-label="ButcherBridge home">
+      <span class="brand-mark" aria-hidden="true">BB</span>
+      <span><strong>ButcherBridge</strong><small>Buying-group decision support</small></span>
+    </a>
+    {% if current_user.is_authenticated %}
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="{{ url_for('main.dashboard') }}">Decision workspace</a>
+        <a href="{{ url_for('main.methodology') }}">Method & rules</a>
+      </nav>
+      <div class="user-menu">
+        <span><b>{{ current_user.name }}</b><small>{{ current_user.role|title }}</small></span>
+        <form action="{{ url_for('auth.logout') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="ghost-btn small-btn" type="submit">Sign out</button>
+        </form>
+      </div>
+    {% endif %}
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-stack" role="status">
+        {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main id="main-content">{% block content %}{% endblock %}</main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
+

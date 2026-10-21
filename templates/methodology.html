@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Method & rules | ButcherBridge{% endblock %}
+{% block content %}
+<section class="section-wrap method-hero">
+  <span class="eyebrow">Decision-model specification</span>
+  <h1>Every recommendation is traceable to an explicit rule.</h1>
+  <p>The model separates calculation logic from Flask and MySQL. This makes the formulas independently testable and prevents the interface from hiding assumptions.</p>
+</section>
+<section class="section-wrap method-grid">
+  <article class="card method-card"><b>1</b><h2>Compatible demand</h2><p>Only committed demand submitted before the order-window close is included. Product must match and required dates must fall inside the configured compatibility window.</p><code>QG = Σ qi</code></article>
+  <article class="card method-card"><b>2</b><h2>Supplier feasibility</h2><p>Product, whole-order capacity, service area, lead time, price-tier eligibility, expected fill rate and on-time performance are checked before ranking.</p></article>
+  <article class="card method-card"><b>3</b><h2>Landed cost</h2><p>Purchase price alone is never used as the decision metric. Fixed fulfilment, variable fulfilment and handling are included.</p><code>Cs = [Ps(Q)Q + Tfixed + TvariableQ + Hs] / Q</code></article>
+  <article class="card method-card"><b>4</b><h2>Capacity allocation</h2><p>Retailer orders remain whole. The exact allocator tests feasible supplier assignments, respects capacity and applies price tiers to the quantity allocated to each supplier.</p></article>
+  <article class="card method-card"><b>5</b><h2>Shared logistics</h2><p>Fixed logistics and handling costs are allocated in proportion to each retailer’s kilograms. The same rule is shown in retailer-level output.</p></article>
+  <article class="card method-card"><b>6</b><h2>Acceptance rule</h2><p>Aggregation is accepted only when it meets every constraint and its total landed cost is lower than the best feasible individual option. Equality or a worse result causes rejection.</p></article>
+</section>
+<section class="section-wrap method-table card panel">
+  <span class="card-kicker">Examination validation pack</span><h2>Four realistic scenarios</h2>
+  <div class="table-wrap"><table><thead><tr><th>No.</th><th>Scenario</th><th>Evidence demonstrated</th><th>Expected decision</th></tr></thead><tbody>
+    <tr><td>1</td><td>Successful aggregation</td><td>Compatible demand reaches a better tier and shares fulfilment cost.</td><td>Accept aggregation</td></tr>
+    <tr><td>2</td><td>Aggregation rejected</td><td>High group delivery cost means individual purchasing is equal or better.</td><td>Reject aggregation</td></tr>
+    <tr><td>3</td><td>Supplier-capacity conflict</td><td>Low-cost suppliers cannot serve the full group alone; allocation is tested.</td><td>Coordinate capacity split</td></tr>
+    <tr><td>4</td><td>Separate vs coordinated fulfilment</td><td>Shared charges are compared with repeated individual fulfilment.</td><td>Coordinate fulfilment</td></tr>
+  </tbody></table></div>
+</section>
+<section class="section-wrap source-note"><p>For the exact REST contract, open <a href="{{ url_for('main.api_contract') }}">openapi.json</a>. Full formulas, hand calculations, test cases, ERD and deployment runbook are included in the repository documentation.</p></section>
+{% endblock %}
+

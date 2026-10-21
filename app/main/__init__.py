@@ -1,0 +1,2 @@
+"""HTML page routes package."""
+
